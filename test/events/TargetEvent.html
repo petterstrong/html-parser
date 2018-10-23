@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>事件冒泡触发</title>
+  <style>
+    button + button {
+      margin-left: 1rem;
+    }
+  </style>
+</head>
+<body>
+<div class="parent">
+  <app/>
+  <button id="cap">捕获</button>
+  <button id="pop">冒泡</button>
+</div>
+<script>
+  document.getElementById('cap').addEventListener('click', function (e) {
+    console.log('come from son')
+  })
+
+  document.getElementById('pop').addEventListener('click', function (e) {
+    console.log('come from daughter')
+  })
+
+  document.querySelector('.parent').addEventListener('click', function (e) {
+    console.log('come from father')
+  }, true)
+
+  document.querySelector('.parent').addEventListener('click', function (e) {
+    console.log('这是在捕获')
+  }, true)
+
+  document.body.addEventListener('click', function (e) {
+    console.log('from body')
+  })
+</script>
+</body>
+</html>
