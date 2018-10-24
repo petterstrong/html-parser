@@ -5,7 +5,7 @@
   <meta name="viewport"
         content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>事件冒泡触发</title>
+  <title>htmlParser</title>
   <style>
     button + button {
       margin-left: 1rem;
@@ -14,30 +14,89 @@
 </head>
 <body>
 <div class="parent">
-  <app/>
-  <button id="cap">捕获</button>
-  <button id="pop">冒泡</button>
+  <div id="test" v-show="false" style="background-image: url('https://ilife.xinshu.me/hero-1.jpg')"><!-- 这是一段注释 --><h1>Hello World<br/>
+      <span>
+        <b>Road to Roman</b>
+      </span>
+      <span>Peace and Love</span>
+      <svg></svg>
+    </h1>
+  </div>
 </div>
+<script src="../../src/parser/HTMLTokenizer.js"></script>
+<script src="../../src/utils/env.js"></script>
 <script>
-  document.getElementById('cap').addEventListener('click', function (e) {
-    console.log('come from son')
+  const html = document.querySelector('.parent').innerHTML
+  function createATSElement(tag, attrs, parent) {
+    return {
+      type: 1,
+      tag,
+      attrsList: attrs,
+      parent,
+      children: []
+    }
+  }
+  // base cached object
+  const stack = []
+  const preserveWhitespace = false
+  let root
+  let currentParent
+  let inVPre = false
+  let inPre = false
+  let warned = false
+
+  const str = parseHTML(html, {
+    shouldKeepComment: false,
+    start: function (tag, attrs, unary, start, end) {
+      // check namespace
+      // inherit parent ns if there is one
+      const ns = (currentParent && currentParent.ns)
+      let element = createATSElement(tag, attrs, currentParent)
+
+      if (ns) {
+        element.ns = ns
+      }
+
+      if (isForbiddenTag(tag)) {
+        element.forbidden = true
+        console.warn(
+          'Templates should only be responsible for mapping the state to the ' +
+          'UI. Avoid placing tags with side-effects in your templates, such as ' +
+          `<${tag}>` + ', as they will not be parsed.'
+        )
+      }
+
+      // tree management
+      if (!root) {
+        root = element
+      } else if (!stack.length) {
+        if (root.if && (element.elseif || element.else)) {
+          addIfCondition(element)
+        }
+      }
+      if (currentParent && !element.forbidden) {
+        currentParent.children.push(element)
+        element.parent = currentParent
+      }
+
+      if (!unary) {
+        currentParent = element
+        stack.push(element)
+      } else {
+        stack.push(element)
+      }
+    },
+    end: function () {
+      const element = stack[stack.length - 1]
+      element.children.pop()
+    },
+    chars: function (text) {
+    },
+    comment: (text) => {
+      console.log(text)
+    }
   })
-
-  document.getElementById('pop').addEventListener('click', function (e) {
-    console.log('come from daughter')
-  })
-
-  document.querySelector('.parent').addEventListener('click', function (e) {
-    console.log('come from father')
-  }, true)
-
-  document.querySelector('.parent').addEventListener('click', function (e) {
-    console.log('这是在捕获')
-  }, true)
-
-  document.body.addEventListener('click', function (e) {
-    console.log('from body')
-  })
+  console.log(root)
 </script>
 </body>
 </html>
