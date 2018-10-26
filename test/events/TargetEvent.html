@@ -96,6 +96,19 @@
       console.log(text)
     }
   })
+
+
+  function processIf(el) {
+    const exp = getAndRemoveAttr(el, 'v-if')
+    if (exp) {
+      el.if = exp
+      addIfCondition(el, {
+        exp,
+        block: el
+      })
+    } else {}
+
+  }
   console.log(root)
 </script>
 </body>

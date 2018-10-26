@@ -24,6 +24,25 @@ function checkInFor(el) {
   return false
 }
 
+function getAndRemoveAttr(el, name, removeFromMap) {
+  let val
+  if (val = el.attrsMap[name] != null) {
+    const list = el.attrsList
+    for (let i = 0, l = list.length; i < l; i++ ) {
+      if (list[i].name === name) {
+        list.splice(i, 1)
+        break
+      }
+    }
+  }
+
+  if (removeFromMap) {
+    delete el.attrsMap[el]
+  }
+
+  return val
+}
+
 function makeAttrsMap(attrs) {
   const map = Object.create(null)
   for (let i = 0, l = attrs.length; i < l; i++) {
