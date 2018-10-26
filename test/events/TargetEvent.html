@@ -38,78 +38,59 @@
   }
   // base cached object
   const stack = []
-  const preserveWhitespace = false
-  let root
-  let currentParent
-  let inVPre = false
-  let inPre = false
-  let warned = false
+  // 节点缓存区
+  let bufferNodes = []
+  // html2json
+  let results = []
+
+
+  const putNode2ParentNodeList = (node) => {
+    if (bufferNodes.length === 0) {
+      results.push(node)
+    } else {
+      let parent = bufferNodes[0]
+
+      if (parent.children === undefined) {
+        parent.children = []
+      }
+      parent.children.push(node)
+    }
+  }
 
   const str = parseHTML(html, {
     shouldKeepComment: false,
     start: function (tag, attrs, unary, start, end) {
-      // check namespace
-      // inherit parent ns if there is one
-      const ns = (currentParent && currentParent.ns)
-      let element = createATSElement(tag, attrs, currentParent)
-
-      if (ns) {
-        element.ns = ns
+      const node = {
+        tag,
+        attrs
       }
-
-      if (isForbiddenTag(tag)) {
-        element.forbidden = true
-        console.warn(
-          'Templates should only be responsible for mapping the state to the ' +
-          'UI. Avoid placing tags with side-effects in your templates, such as ' +
-          `<${tag}>` + ', as they will not be parsed.'
-        )
-      }
-
-      // tree management
-      if (!root) {
-        root = element
-      } else if (!stack.length) {
-        if (root.if && (element.elseif || element.else)) {
-          addIfCondition(element)
-        }
-      }
-      if (currentParent && !element.forbidden) {
-        currentParent.children.push(element)
-        element.parent = currentParent
-      }
-
-      if (!unary) {
-        currentParent = element
-        stack.push(element)
+      if (unary) {
+        putNode2ParentNodeList(node)
       } else {
-        stack.push(element)
+        bufferNodes.unshift(node)
       }
     },
-    end: function () {
-      const element = stack[stack.length - 1]
-      element.children.pop()
+    end: function (tag) {
+      let node = bufferNodes.shift()
+
+      if (node.tag !== tag) {
+        console.error('invalid state: mismatch end tag');
+      }
+      putNode2ParentNodeList(node)
     },
     chars: function (text) {
+      if (text.trim()) {
+        let node = {
+          type: 'text',
+          text: text.trim()
+        }
+        putNode2ParentNodeList(node);
+      }
     },
     comment: (text) => {
-      console.log(text)
     }
   })
-
-
-  function processIf(el) {
-    const exp = getAndRemoveAttr(el, 'v-if')
-    if (exp) {
-      el.if = exp
-      addIfCondition(el, {
-        exp,
-        block: el
-      })
-    } else {}
-
-  }
-  console.log(root)
+  console.log(results)
 </script>
 </body>
 </html>
